@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "id": "tmos.mise-radar",
+  "name": "TMOS mise radar",
+  "version": "1.3.0",
+  "author": "Chyld Medford (TMOS fork by Timothy DeFreest)",
+  "license": "MIT",
+  "description": "Watches the mise-managed AI CLIs you actually use and turns the bar red when one falls behind latest, with one-click upgrades per tool or for everything. Optionally watches any number of remote Docker stacks you name, showing image updates with security and breaking-change flags.",
+  "kinds": [
+    "bar-widget"
+  ],
+  "entryPoints": {
+    "barWidget": "BarWidget.qml"
+  },
+  "barWidget": {
+    "displayName": "mise radar",
+    "description": "See which mise tools are behind latest and upgrade them from the panel.",
+    "category": "System",
+    "allowMultiple": false,
+    "defaultSection": "right"
+  },
+  "homepage": "https://github.com/thetimmyman/tmos-mise-radar"
+}

@@ -1,0 +1,2 @@
+singleton MiseService 1.0 Service.qml
+singleton StackService 1.0 StackService.qml
