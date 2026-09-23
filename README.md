@@ -1,4 +1,9 @@
-# mise radar
+# TMOS mise radar
+
+A fork of [chyld/omarchy-mise-radar](https://github.com/chyld/omarchy-mise-radar) — MIT, © Chyld
+Medford. The radar itself, and most of this code, is Chyld's. This fork adds one-click upgrades per
+tool, the configurable stack watcher described below, and TMOS branding; the original `LICENSE` is
+retained unchanged.
 
 Agent harnesses move every week. A stale Claude, Codex, or OpenCode pin can mean a new model is out and your CLI does not even know it exists. mise radar watches the tools you actually use on [Omarchy](https://omarchy.org) and turns the bar red when one falls behind latest, including brand-new releases mise would otherwise hide. Click for requested, installed, and latest.
 
