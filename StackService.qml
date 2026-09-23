@@ -109,13 +109,15 @@ Item {
   function normaliseTargets(list) {
     var out = []
     var rejected = 0
-    if (!Array.isArray(list)) {
-      root.lastRejected = 0
-      return out
-    }
-    for (var i = 0; i < list.length; i++) {
+    // A single stack may be written without the wrapping array — `omarchy bar set` stores a
+    // one-element list back as the bare object — so both shapes mean the same thing here. A list
+    // that arrives as anything else is reported, never run.
+    var items = Array.isArray(list) ? list : (list && typeof list === "object" ? [list] : [])
+    if (!Array.isArray(list) && items.length === 0 && list !== undefined && list !== null && list !== "")
+      rejected++
+    for (var i = 0; i < items.length; i++) {
       if (out.length >= root.maxTargets) { rejected++; continue }
-      var item = list[i]
+      var item = items[i]
       if (!item || typeof item !== "object") { rejected++; continue }
       var host = root.cleanString(item.host, 128).trim()
       var script = root.cleanString(item.script, 300).trim()
