@@ -1,6 +1,7 @@
 import QtQuick
 import Quickshell
 import qs.Commons
+import qs.Commons as Commons
 import qs.Ui
 import "." as Backend
 
@@ -117,22 +118,33 @@ BarWidget {
     iconComponent: Component {
       Item {
         id: radar
-        readonly property color ink: root.stale ? Color.urgent : button.foreground
+        readonly property color ink: root.stale ? Commons.Color.urgent : button.foreground
 
         Rectangle {
           anchors.centerIn: parent
-          width: Math.min(parent.width, parent.height) - 1
+          width: Math.min(parent.width, parent.height) - Style.spacing.hairline
           height: width
           radius: width / 2
           color: "transparent"
           border.color: radar.ink
-          border.width: 1.25
+          border.width: Style.spacing.hairline
           antialiasing: true
         }
 
         Rectangle {
-          width: 1.25
-          height: parent.height * 0.39
+          anchors.centerIn: parent
+          width: Math.min(parent.width, parent.height) * 0.52
+          height: width
+          radius: width / 2
+          color: "transparent"
+          border.color: Util.alpha(radar.ink, 0.3)
+          border.width: Style.spacing.hairline
+          antialiasing: true
+        }
+
+        Rectangle {
+          width: Style.spacing.hairline
+          height: parent.height * 0.42
           radius: width / 2
           color: radar.ink
           x: parent.width / 2 - width / 2
@@ -143,7 +155,7 @@ BarWidget {
         }
 
         Rectangle {
-          width: 2.5
+          width: Style.spacing.xs
           height: width
           radius: width / 2
           color: radar.ink
