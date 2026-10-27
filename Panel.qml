@@ -1,6 +1,7 @@
 import QtQuick
 import Quickshell
 import qs.Commons
+import qs.Commons as Commons
 import qs.Ui
 
 Panel {
@@ -65,7 +66,7 @@ Panel {
           Text {
             textFormat: Text.PlainText
             text: "mise radar"
-            color: Color.popups.text
+            color: Commons.Color.popups.text
             font.family: root.bar ? root.bar.fontFamily : Style.font.family
             font.pixelSize: Style.font.body
             font.bold: true
@@ -75,7 +76,7 @@ Panel {
             textFormat: Text.PlainText
             visible: root.service && root.service.lastChecked !== ""
             text: root.service ? "last successful check " + root.service.lastChecked : ""
-            color: Color.popups.text
+            color: Commons.Color.popups.text
             opacity: 0.45
             font.family: root.bar ? root.bar.fontFamily : Style.font.family
             font.pixelSize: Style.font.bodySmall
@@ -91,8 +92,8 @@ Panel {
             anchors.verticalCenter: parent.verticalCenter
             iconText: "󰚰"
             tooltipText: "Run mise upgrade --bump for every outdated tool"
-            foreground: Color.popups.text
-            hoverColor: Color.accent
+            foreground: Commons.Color.popups.text
+            hoverColor: Commons.Color.accent
             fontFamily: root.bar ? root.bar.fontFamily : Style.font.family
             bordered: true
             enabled: !root.upgrading && root.outdatedCount > 0
@@ -105,7 +106,7 @@ Panel {
             text: root.upgrading
               ? "Updating " + (root.service.upgradingTool !== "" ? root.service.upgradingTool : "all tools") + "…"
               : "Update all " + root.outdatedCount + " outdated tool" + (root.outdatedCount === 1 ? "" : "s")
-            color: Color.popups.text
+            color: Commons.Color.popups.text
             opacity: root.upgrading ? 0.6 : 1
             font.family: root.bar ? root.bar.fontFamily : Style.font.family
             font.pixelSize: Style.font.bodySmall
@@ -117,7 +118,7 @@ Panel {
           width: parent.width
           textFormat: Text.PlainText
           text: root.service ? root.service.upgradeMessage : ""
-          color: root.service && root.service.upgradeFailed ? Color.urgent : Color.accent
+          color: root.service && root.service.upgradeFailed ? Commons.Color.urgent : Commons.Color.accent
           font.family: root.bar ? root.bar.fontFamily : Style.font.family
           font.pixelSize: Style.font.bodySmall
           wrapMode: Text.WordWrap
@@ -128,7 +129,7 @@ Panel {
           width: parent.width
           textFormat: Text.PlainText
           text: root.service ? root.service.errorMessage : ""
-          color: Color.urgent
+          color: Commons.Color.urgent
           font.family: root.bar ? root.bar.fontFamily : Style.font.family
           font.pixelSize: Style.font.bodySmall
           wrapMode: Text.WordWrap
@@ -138,7 +139,7 @@ Panel {
           visible: root.service && !root.service.loading && root.service.toolRows.length === 0 && root.service.errorMessage === ""
           textFormat: Text.PlainText
           text: "No tools configured"
-          color: Color.popups.text
+          color: Commons.Color.popups.text
           opacity: 0.6
           font.family: root.bar ? root.bar.fontFamily : Style.font.family
           font.pixelSize: Style.font.bodySmall
@@ -148,7 +149,7 @@ Panel {
           visible: root.service && root.service.loading
           textFormat: Text.PlainText
           text: "Loading…"
-          color: Color.popups.text
+          color: Commons.Color.popups.text
           opacity: 0.6
           font.family: root.bar ? root.bar.fontFamily : Style.font.family
           font.pixelSize: Style.font.bodySmall
@@ -168,7 +169,7 @@ Panel {
               width: parent.width * 0.36
               textFormat: Text.PlainText
               text: "tool"
-              color: Color.popups.text
+              color: Commons.Color.popups.text
               opacity: 0.45
               font.family: root.bar ? root.bar.fontFamily : Style.font.family
               font.pixelSize: Style.font.bodySmall
@@ -177,7 +178,7 @@ Panel {
               width: parent.width * 0.18
               textFormat: Text.PlainText
               text: "requested"
-              color: Color.popups.text
+              color: Commons.Color.popups.text
               opacity: 0.45
               font.family: root.bar ? root.bar.fontFamily : Style.font.family
               font.pixelSize: Style.font.bodySmall
@@ -186,7 +187,7 @@ Panel {
               width: parent.width * 0.18
               textFormat: Text.PlainText
               text: "installed"
-              color: Color.popups.text
+              color: Commons.Color.popups.text
               opacity: 0.45
               font.family: root.bar ? root.bar.fontFamily : Style.font.family
               font.pixelSize: Style.font.bodySmall
@@ -195,7 +196,7 @@ Panel {
               width: parent.width * 0.18
               textFormat: Text.PlainText
               text: "latest"
-              color: Color.popups.text
+              color: Commons.Color.popups.text
               opacity: 0.45
               font.family: root.bar ? root.bar.fontFamily : Style.font.family
               font.pixelSize: Style.font.bodySmall
@@ -209,7 +210,7 @@ Panel {
             Rectangle {
               width: parent.width
               height: rowTexts.implicitHeight + Style.space(4)
-              color: modelData.outdated ? Util.alpha(Color.accent, 0.12) : "transparent"
+              color: modelData.outdated ? Util.alpha(Commons.Color.accent, 0.12) : "transparent"
               radius: Style.cornerRadius
 
               Row {
@@ -223,7 +224,7 @@ Panel {
                   textFormat: Text.PlainText
                   text: modelData.name
                   elide: Text.ElideRight
-                  color: Color.popups.text
+                  color: Commons.Color.popups.text
                   font.family: root.bar ? root.bar.fontFamily : Style.font.family
                   font.pixelSize: Style.font.bodySmall
                   font.bold: true
@@ -233,7 +234,7 @@ Panel {
                   textFormat: Text.PlainText
                   text: modelData.requested
                   elide: Text.ElideRight
-                  color: Color.popups.text
+                  color: Commons.Color.popups.text
                   font.family: root.bar ? root.bar.fontFamily : Style.font.family
                   font.pixelSize: Style.font.bodySmall
                 }
@@ -242,7 +243,7 @@ Panel {
                   textFormat: Text.PlainText
                   text: modelData.current
                   elide: Text.ElideRight
-                  color: Color.popups.text
+                  color: Commons.Color.popups.text
                   font.family: root.bar ? root.bar.fontFamily : Style.font.family
                   font.pixelSize: Style.font.bodySmall
                 }
@@ -251,7 +252,7 @@ Panel {
                   textFormat: Text.PlainText
                   text: modelData.latest !== "" ? modelData.latest : modelData.current
                   elide: Text.ElideRight
-                  color: modelData.outdated ? Color.accent : Color.popups.text
+                  color: modelData.outdated ? Commons.Color.accent : Commons.Color.popups.text
                   font.family: root.bar ? root.bar.fontFamily : Style.font.family
                   font.pixelSize: Style.font.bodySmall
                   font.bold: modelData.outdated
@@ -266,8 +267,8 @@ Panel {
                     visible: modelData.outdated
                     iconText: "󰚰"
                     tooltipText: "mise upgrade --bump " + modelData.name
-                    foreground: Color.popups.text
-                    hoverColor: Color.accent
+                    foreground: Commons.Color.popups.text
+                    hoverColor: Commons.Color.accent
                     fontFamily: root.bar ? root.bar.fontFamily : Style.font.family
                     size: Style.space(18)
                     enabled: !root.upgrading
@@ -283,7 +284,7 @@ Panel {
         Rectangle {
           width: parent.width
           height: 1
-          color: Color.popups.text
+          color: Commons.Color.popups.text
           opacity: 0.12
         }
 
@@ -294,7 +295,7 @@ Panel {
           Text {
             textFormat: Text.PlainText
             text: "media stack"
-            color: Color.popups.text
+            color: Commons.Color.popups.text
             font.family: root.bar ? root.bar.fontFamily : Style.font.family
             font.pixelSize: Style.font.body
             font.bold: true
@@ -306,7 +307,7 @@ Panel {
             text: !root.stack ? "" : (root.stack.targetCount === 1
               ? root.stack.targets[0].name
               : root.stack.targetCount + " stacks") + " · checked " + root.stack.lastChecked
-            color: Color.popups.text
+            color: Commons.Color.popups.text
             opacity: 0.45
             font.family: root.bar ? root.bar.fontFamily : Style.font.family
             font.pixelSize: Style.font.bodySmall
@@ -322,8 +323,8 @@ Panel {
             anchors.verticalCenter: parent.verticalCenter
             iconText: "󰚰"
             tooltipText: "Pull and recreate updates with reviewed notes and no warnings"
-            foreground: Color.popups.text
-            hoverColor: Color.accent
+            foreground: Commons.Color.popups.text
+            hoverColor: Commons.Color.accent
             fontFamily: root.bar ? root.bar.fontFamily : Style.font.family
             bordered: true
             enabled: root.stack && !root.stack.updating && root.stack.safeCount > 0
@@ -337,7 +338,7 @@ Panel {
               ? "Updating " + root.stack.updatingService + "…"
               : "Update " + root.stack.safeCount + " safe service" + (root.stack.safeCount === 1 ? "" : "s")
                 + (root.stack.reviewCount > 0 ? " (" + root.stack.reviewCount + " need review)" : "")
-            color: Color.popups.text
+            color: Commons.Color.popups.text
             opacity: root.stack && root.stack.updating ? 0.6 : 1
             font.family: root.bar ? root.bar.fontFamily : Style.font.family
             font.pixelSize: Style.font.bodySmall
@@ -349,7 +350,7 @@ Panel {
           width: parent.width
           textFormat: Text.PlainText
           text: root.stack ? root.stack.updateMessage : ""
-          color: root.stack && root.stack.updateFailed ? Color.urgent : Color.accent
+          color: root.stack && root.stack.updateFailed ? Commons.Color.urgent : Commons.Color.accent
           font.family: root.bar ? root.bar.fontFamily : Style.font.family
           font.pixelSize: Style.font.bodySmall
           wrapMode: Text.WordWrap
@@ -360,7 +361,7 @@ Panel {
           width: parent.width
           textFormat: Text.PlainText
           text: root.stack ? root.stack.errorMessage : ""
-          color: Color.urgent
+          color: Commons.Color.urgent
           font.family: root.bar ? root.bar.fontFamily : Style.font.family
           font.pixelSize: Style.font.bodySmall
           wrapMode: Text.WordWrap
@@ -371,7 +372,7 @@ Panel {
           textFormat: Text.PlainText
           text: "Checking " + (root.stack && root.stack.checkingTargetName !== ""
             ? root.stack.checkingTargetName : "stacks") + "…"
-          color: Color.popups.text
+          color: Commons.Color.popups.text
           opacity: 0.6
           font.family: root.bar ? root.bar.fontFamily : Style.font.family
           font.pixelSize: Style.font.bodySmall
@@ -381,7 +382,7 @@ Panel {
           visible: root.stack && root.stack.lastChecked !== "" && root.stack.rows.length === 0
           textFormat: Text.PlainText
           text: root.stack ? "All " + root.stack.totalCount + " services are on the latest image" : ""
-          color: Color.popups.text
+          color: Commons.Color.popups.text
           opacity: 0.6
           font.family: root.bar ? root.bar.fontFamily : Style.font.family
           font.pixelSize: Style.font.bodySmall
@@ -397,9 +398,9 @@ Panel {
             width: parent.width
             height: stackCol.implicitHeight + Style.space(6)
             radius: Style.cornerRadius
-            color: stackRow.secure ? Util.alpha(Color.urgent, 0.16)
-              : modelData.reviewRequired ? Util.alpha(Color.urgent, 0.08)
-              : Util.alpha(Color.accent, 0.10)
+            color: stackRow.secure ? Util.alpha(Commons.Color.urgent, 0.16)
+              : modelData.reviewRequired ? Util.alpha(Commons.Color.urgent, 0.08)
+              : Util.alpha(Commons.Color.accent, 0.10)
 
             Column {
               id: stackCol
@@ -417,7 +418,7 @@ Panel {
                   textFormat: Text.PlainText
                   text: (stackRow.secure ? "🛡 " : modelData.reviewRequired ? "⚠ " : "") + modelData.name
                   elide: Text.ElideRight
-                  color: stackRow.secure ? Color.urgent : Color.popups.text
+                  color: stackRow.secure ? Commons.Color.urgent : Commons.Color.popups.text
                   font.family: root.bar ? root.bar.fontFamily : Style.font.family
                   font.pixelSize: Style.font.bodySmall
                   font.bold: true
@@ -427,7 +428,7 @@ Panel {
                   textFormat: Text.PlainText
                   text: modelData.current
                   elide: Text.ElideRight
-                  color: Color.popups.text
+                  color: Commons.Color.popups.text
                   opacity: 0.7
                   font.family: root.bar ? root.bar.fontFamily : Style.font.family
                   font.pixelSize: Style.font.bodySmall
@@ -437,7 +438,7 @@ Panel {
                   textFormat: Text.PlainText
                   text: modelData.error !== "" ? modelData.error : "→ " + modelData.latest
                   elide: Text.ElideRight
-                  color: modelData.error !== "" ? Color.urgent : Color.accent
+                  color: modelData.error !== "" ? Commons.Color.urgent : Commons.Color.accent
                   font.family: root.bar ? root.bar.fontFamily : Style.font.family
                   font.pixelSize: Style.font.bodySmall
                   font.bold: modelData.error === ""
@@ -455,8 +456,8 @@ Panel {
                       visible: modelData.notesUrl !== ""
                       iconText: "󰈙"
                       tooltipText: "Open release notes"
-                      foreground: Color.popups.text
-                      hoverColor: Color.accent
+                      foreground: Commons.Color.popups.text
+                      hoverColor: Commons.Color.accent
                       fontFamily: root.bar ? root.bar.fontFamily : Style.font.family
                       size: Style.space(18)
                       onClicked: Qt.openUrlExternally(modelData.notesUrl)
@@ -467,8 +468,8 @@ Panel {
                       tooltipText: stackRow.armed ? "Confirm: update " + modelData.name + " after review"
                         : modelData.reviewRequired ? "Review needed: click, read the notes, click again"
                         : "Pull and recreate " + modelData.name
-                      foreground: stackRow.armed ? Color.urgent : Color.popups.text
-                      hoverColor: modelData.reviewRequired ? Color.urgent : Color.accent
+                      foreground: stackRow.armed ? Commons.Color.urgent : Commons.Color.popups.text
+                      hoverColor: modelData.reviewRequired ? Commons.Color.urgent : Commons.Color.accent
                       fontFamily: root.bar ? root.bar.fontFamily : Style.font.family
                       size: Style.space(18)
                       enabled: root.stack && !root.stack.updating
@@ -486,7 +487,7 @@ Panel {
                   textFormat: Text.PlainText
                   text: "  · " + modelData
                   elide: Text.ElideRight
-                  color: Color.popups.text
+                  color: Commons.Color.popups.text
                   opacity: 0.65
                   font.family: root.bar ? root.bar.fontFamily : Style.font.family
                   font.pixelSize: Style.font.bodySmall
