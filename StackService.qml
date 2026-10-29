@@ -46,6 +46,9 @@ Item {
   property double lastRefreshAt: 0
   property string checkOutput: ""
   property bool checkAborted: false
+  // Why the running check was aborted ("timed out", "output too large"). Never guessed afterwards:
+  // the flag alone cannot tell a deadline from an oversized report.
+  property string checkAbortReason: ""
 
   // Targets are checked one at a time, and every row remembers which target produced it: an update
   // has to run on the host that owns the service.
@@ -263,6 +266,7 @@ Item {
     }
     root.checkOutput = ""
     root.checkAborted = false
+    root.checkAbortReason = ""
     checkProcess.command = root.sshCommand(root.targets[root.checkTargetAt], ["check"])
     checkDeadline.restart()
     checkProcess.running = true
@@ -281,6 +285,14 @@ Item {
     root.runRefresh()
   }
 
+  // The one-line reason a target contributes to the error summary. An abort is not always a
+  // timeout — oversized output aborts the check too — so the recorded reason wins over the flag.
+  function checkFailureReason(exitCode) {
+    if (root.checkAborted) return root.checkAbortReason || "timed out"
+    if (exitCode === 255) return "could not be reached over ssh"
+    return "check failed (exit " + exitCode + ")"
+  }
+
   function handleCheckExited(exitCode) {
     checkDeadline.stop()
     checkKill.stop()
@@ -294,10 +306,7 @@ Item {
     var label = target ? target.name : "stack"
     if (root.checkAborted || exitCode !== 0) {
       // Keep the last good rows visible; only report which target failed and how.
-      var why = root.checkAborted
-        ? "timed out"
-        : exitCode === 255 ? "could not be reached over ssh" : "check failed (exit " + exitCode + ")"
-      if (target) root.checkErrors = root.checkErrors.concat([label + ": " + why])
+      if (target) root.checkErrors = root.checkErrors.concat([label + ": " + root.checkFailureReason(exitCode)])
     } else {
       var list = root.parseReport(output)
       if (list === null) {
@@ -317,21 +326,37 @@ Item {
     root.startNextCheck()
   }
 
-  // One click arms a breaking update; a second click on the same service runs it.
-  function requestUpdate(name) {
+  // A service name is unique per host, not across hosts: two stacks can legitimately both run
+  // `redis`, so an update has to be aimed at the host whose row was clicked, never at the first
+  // row that happens to share the name. `key` is what the panel compares to arm the second click.
+  function rowKey(row) {
+    if (!row) return ""
+    return String(row.targetId === undefined ? "" : row.targetId) + "|" + String(row.name)
+  }
+  function findRow(name, targetId) {
+    var wanted = typeof targetId === "string" ? targetId : null
+    for (var i = 0; i < root.rows.length; i++) {
+      var row = root.rows[i]
+      if (row.name !== name) continue
+      if (wanted === null || row.targetId === wanted) return row
+    }
+    return null
+  }
+
+  // One click arms a breaking update; a second click on the same row runs it.
+  function requestUpdate(name, targetId) {
     if (root.updating || !root.isSafeServiceName(name)) return
-    var row = null
-    for (var i = 0; i < root.rows.length; i++) if (root.rows[i].name === name) row = root.rows[i]
+    var row = root.findRow(name, targetId)
     if (!row) return
-    if (row.reviewRequired && root.confirmService !== name) {
-      root.confirmService = name
+    if (row.reviewRequired && root.confirmService !== root.rowKey(row)) {
+      root.confirmService = root.rowKey(row)
       root.updateMessage = name + (row.breaking ? " has possible breaking changes." : " needs manual review.")
         + " Read the notes, then click again to update."
       root.updateFailed = false
       return
     }
     root.confirmService = ""
-    root.startQueue([{ name: name, targetId: row.targetId }])
+    root.startQueue([{ name: row.name, targetId: row.targetId }])
   }
 
   // Updates only services whose release notes could be reviewed and had no warning.
@@ -359,7 +384,14 @@ Item {
   // global, so one stack's update can only ever touch its own host.
   function startUpdate(item) {
     var target = item ? root.targetById(item.targetId) : null
-    if (!item || !target || !root.isSafeServiceName(item.name)) { root.finishQueue(); return }
+    if (!item || !target || !root.isSafeServiceName(item.name)) {
+      // The target was reconfigured between queueing and running, so nothing was pulled: report the
+      // service as failed instead of finishing with "Updated", which would claim work that never ran.
+      if (item && root.isSafeServiceName(item.name))
+        root.updateFailures = root.updateFailures.concat([item.name])
+      root.finishQueue()
+      return
+    }
     root.updatingService = item.name
     updateProcess.command = root.sshCommand(target, ["update", item.name])
     updateDeadline.restart()
@@ -413,7 +445,7 @@ Item {
         if (root.checkAborted) return
         if (root.checkOutput.length + chunk.length > root.maxStdoutChars) {
           root.checkAborted = true
-          root.errorMessage = "Stack check output too large"
+          root.checkAbortReason = "output too large"
           root.abortProc(checkProcess, checkDeadline, checkKill)
           return
         }
@@ -431,7 +463,7 @@ Item {
     onTriggered: {
       if (!checkProcess.running) return
       root.checkAborted = true
-      root.errorMessage = "Stack check timed out"
+      root.checkAbortReason = "timed out"
       root.abortProc(checkProcess, checkDeadline, checkKill)
     }
   }
