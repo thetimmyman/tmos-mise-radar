@@ -45,7 +45,8 @@ Panel {
     bar: root.bar
     open: root.opened
     focusTarget: keyCatcher
-    contentWidth: panel.fittedContentWidth(Style.space(520))
+    padding: Style.spacing.panelPadding
+    contentWidth: panel.fittedContentWidth(Style.space(640))
     contentHeight: panel.fittedContentHeight(content.implicitHeight)
 
     PanelKeyCatcher {
@@ -57,36 +58,38 @@ Panel {
       Column {
         id: content
         width: parent.width
-        spacing: Style.space(6)
+        spacing: Style.spacing.panelGap
 
-        Row {
+        Column {
           width: parent.width
-          spacing: Style.space(6)
+          spacing: Style.spacing.labelGap
 
           Text {
             textFormat: Text.PlainText
             text: "mise radar"
             color: Commons.Color.popups.text
             font.family: root.bar ? root.bar.fontFamily : Style.font.family
-            font.pixelSize: Style.font.body
+            font.pixelSize: Style.font.heading
             font.bold: true
           }
 
           Text {
             textFormat: Text.PlainText
+            width: parent.width
             visible: root.service && root.service.lastChecked !== ""
             text: root.service ? "last successful check " + root.service.lastChecked : ""
             color: Commons.Color.popups.text
-            opacity: 0.45
+            opacity: 0.65
             font.family: root.bar ? root.bar.fontFamily : Style.font.family
             font.pixelSize: Style.font.bodySmall
+            wrapMode: Text.WordWrap
           }
         }
 
         Row {
           visible: root.outdatedCount > 0 || root.upgrading
           width: parent.width
-          spacing: Style.space(6)
+          spacing: Style.spacing.controlGap
 
           PanelActionButton {
             anchors.verticalCenter: parent.verticalCenter
@@ -140,7 +143,7 @@ Panel {
           textFormat: Text.PlainText
           text: "No tools configured"
           color: Commons.Color.popups.text
-          opacity: 0.6
+          opacity: 0.75
           font.family: root.bar ? root.bar.fontFamily : Style.font.family
           font.pixelSize: Style.font.bodySmall
         }
@@ -150,7 +153,7 @@ Panel {
           textFormat: Text.PlainText
           text: "Loading…"
           color: Commons.Color.popups.text
-          opacity: 0.6
+          opacity: 0.75
           font.family: root.bar ? root.bar.fontFamily : Style.font.family
           font.pixelSize: Style.font.bodySmall
         }
@@ -158,11 +161,12 @@ Panel {
         Column {
           visible: root.service && root.service.toolRows.length > 0
           width: parent.width
-          spacing: 0
+          spacing: Style.spacing.sm
 
           Row {
-            width: parent.width
-            height: Style.font.bodySmall + Style.space(4)
+            x: Style.spacing.lg
+            width: parent.width - Style.spacing.lg * 2
+            height: Style.spacing.controlHeight
             spacing: 0
 
             Text {
@@ -170,7 +174,7 @@ Panel {
               textFormat: Text.PlainText
               text: "tool"
               color: Commons.Color.popups.text
-              opacity: 0.45
+              opacity: 0.65
               font.family: root.bar ? root.bar.fontFamily : Style.font.family
               font.pixelSize: Style.font.bodySmall
             }
@@ -179,7 +183,7 @@ Panel {
               textFormat: Text.PlainText
               text: "requested"
               color: Commons.Color.popups.text
-              opacity: 0.45
+              opacity: 0.65
               font.family: root.bar ? root.bar.fontFamily : Style.font.family
               font.pixelSize: Style.font.bodySmall
             }
@@ -188,7 +192,7 @@ Panel {
               textFormat: Text.PlainText
               text: "installed"
               color: Commons.Color.popups.text
-              opacity: 0.45
+              opacity: 0.65
               font.family: root.bar ? root.bar.fontFamily : Style.font.family
               font.pixelSize: Style.font.bodySmall
             }
@@ -197,7 +201,7 @@ Panel {
               textFormat: Text.PlainText
               text: "latest"
               color: Commons.Color.popups.text
-              opacity: 0.45
+              opacity: 0.65
               font.family: root.bar ? root.bar.fontFamily : Style.font.family
               font.pixelSize: Style.font.bodySmall
             }
@@ -209,14 +213,17 @@ Panel {
 
             Rectangle {
               width: parent.width
-              height: rowTexts.implicitHeight + Style.space(4)
-              color: modelData.outdated ? Util.alpha(Commons.Color.accent, 0.12) : "transparent"
+              height: Math.max(Style.spacing.popupRowHeight, rowTexts.implicitHeight + Style.spacing.xl)
+              color: modelData.outdated ? Util.alpha(Commons.Color.accent, 0.10) : Util.alpha(Commons.Color.popups.text, Style.normalFillAlpha)
               radius: Style.cornerRadius
+              border.width: Style.spacing.hairline
+              border.color: Util.alpha(modelData.outdated ? Commons.Color.accent : Commons.Color.popups.text, 0.12)
 
               Row {
                 id: rowTexts
                 anchors.verticalCenter: parent.verticalCenter
-                width: parent.width
+                x: Style.spacing.lg
+                width: parent.width - Style.spacing.lg * 2
                 spacing: 0
 
                 Text {
@@ -259,7 +266,7 @@ Panel {
                 }
                 Item {
                   width: parent.width * 0.10
-                  height: Style.space(18)
+                  height: Style.spacing.controlHeight
 
                   PanelActionButton {
                     anchors.right: parent.right
@@ -270,7 +277,7 @@ Panel {
                     foreground: Commons.Color.popups.text
                     hoverColor: Commons.Color.accent
                     fontFamily: root.bar ? root.bar.fontFamily : Style.font.family
-                    size: Style.space(18)
+                    size: Style.spacing.controlHeight
                     enabled: !root.upgrading
                     onClicked: if (root.service) root.service.upgradeTool(modelData.name)
                   }
@@ -288,36 +295,38 @@ Panel {
           opacity: 0.12
         }
 
-        Row {
+        Column {
           width: parent.width
-          spacing: Style.space(6)
+          spacing: Style.spacing.labelGap
 
           Text {
             textFormat: Text.PlainText
             text: "media stack"
             color: Commons.Color.popups.text
             font.family: root.bar ? root.bar.fontFamily : Style.font.family
-            font.pixelSize: Style.font.body
+            font.pixelSize: Style.font.title
             font.bold: true
           }
 
           Text {
             textFormat: Text.PlainText
+            width: parent.width
             visible: root.stack && root.stack.lastChecked !== ""
             text: !root.stack ? "" : (root.stack.targetCount === 1
               ? root.stack.targets[0].name
               : root.stack.targetCount + " stacks") + " · checked " + root.stack.lastChecked
             color: Commons.Color.popups.text
-            opacity: 0.45
+            opacity: 0.65
             font.family: root.bar ? root.bar.fontFamily : Style.font.family
             font.pixelSize: Style.font.bodySmall
+            wrapMode: Text.WordWrap
           }
         }
 
         Row {
           visible: root.stack && (root.stack.safeCount > 0 || root.stack.updating)
           width: parent.width
-          spacing: Style.space(6)
+          spacing: Style.spacing.controlGap
 
           PanelActionButton {
             anchors.verticalCenter: parent.verticalCenter
@@ -373,7 +382,7 @@ Panel {
           text: "Checking " + (root.stack && root.stack.checkingTargetName !== ""
             ? root.stack.checkingTargetName : "stacks") + "…"
           color: Commons.Color.popups.text
-          opacity: 0.6
+          opacity: 0.75
           font.family: root.bar ? root.bar.fontFamily : Style.font.family
           font.pixelSize: Style.font.bodySmall
         }
@@ -383,7 +392,7 @@ Panel {
           textFormat: Text.PlainText
           text: root.stack ? "All " + root.stack.totalCount + " services are on the latest image" : ""
           color: Commons.Color.popups.text
-          opacity: 0.6
+          opacity: 0.75
           font.family: root.bar ? root.bar.fontFamily : Style.font.family
           font.pixelSize: Style.font.bodySmall
         }
@@ -396,8 +405,10 @@ Panel {
             readonly property bool secure: modelData.security !== ""
             readonly property bool armed: root.stack && root.stack.confirmService === root.stack.rowKey(modelData)
             width: parent.width
-            height: stackCol.implicitHeight + Style.space(6)
+            height: stackCol.implicitHeight + Style.spacing.xxl
             radius: Style.cornerRadius
+            border.width: Style.spacing.hairline
+            border.color: Util.alpha(stackRow.secure || modelData.reviewRequired ? Commons.Color.urgent : Commons.Color.accent, 0.2)
             color: stackRow.secure ? Util.alpha(Commons.Color.urgent, 0.16)
               : modelData.reviewRequired ? Util.alpha(Commons.Color.urgent, 0.08)
               : Util.alpha(Commons.Color.accent, 0.10)
@@ -405,9 +416,9 @@ Panel {
             Column {
               id: stackCol
               anchors.verticalCenter: parent.verticalCenter
-              x: Style.space(4)
-              width: parent.width - Style.space(8)
-              spacing: Style.space(2)
+              x: Style.spacing.lg
+              width: parent.width - Style.spacing.lg * 2
+              spacing: Style.spacing.sm
 
               Row {
                 width: parent.width
@@ -445,12 +456,12 @@ Panel {
                 }
                 Item {
                   width: parent.width * 0.16
-                  height: Style.space(18)
+                  height: Style.spacing.controlHeight
 
                   Row {
                     anchors.right: parent.right
                     anchors.verticalCenter: parent.verticalCenter
-                    spacing: Style.space(4)
+                    spacing: Style.spacing.sm
 
                     PanelActionButton {
                       visible: modelData.notesUrl !== ""
@@ -459,7 +470,7 @@ Panel {
                       foreground: Commons.Color.popups.text
                       hoverColor: Commons.Color.accent
                       fontFamily: root.bar ? root.bar.fontFamily : Style.font.family
-                      size: Style.space(18)
+                      size: Style.spacing.controlHeight
                       onClicked: Qt.openUrlExternally(modelData.notesUrl)
                     }
                     PanelActionButton {
@@ -471,7 +482,7 @@ Panel {
                       foreground: stackRow.armed ? Commons.Color.urgent : Commons.Color.popups.text
                       hoverColor: modelData.reviewRequired ? Commons.Color.urgent : Commons.Color.accent
                       fontFamily: root.bar ? root.bar.fontFamily : Style.font.family
-                      size: Style.space(18)
+                      size: Style.spacing.controlHeight
                       enabled: root.stack && !root.stack.updating
                       onClicked: if (root.stack) root.stack.requestUpdate(modelData.name, modelData.targetId)
                     }
