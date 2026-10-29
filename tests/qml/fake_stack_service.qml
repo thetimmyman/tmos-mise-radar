@@ -22,7 +22,14 @@ Item {
 
   function acquire() { consumerCount++; return String(consumerCount) }
   function release(token) { consumerCount-- }
+  property var targets: []
+  // The widget calls configure() with its `services` setting; a fake without it raises a TypeError
+  // on every widget creation and leaves the stack section unexercised.
+  function configure(list) { targets = Array.isArray(list) ? list : (list ? [list] : []) }
   function requestRefresh() {}
   function updateSafe() {}
-  function requestUpdate(name) {}
+  // Mirrors the real singleton: an update is aimed at one host, and the panel asks for the row key.
+  function rowKey(row) { return row ? String(row.targetId === undefined ? "" : row.targetId) + "|" + String(row.name) : "" }
+  function requestUpdate(name, targetId) { lastUpdate = [name, targetId] }
+  property var lastUpdate: null
 }

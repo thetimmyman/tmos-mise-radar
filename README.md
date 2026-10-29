@@ -59,8 +59,11 @@ warning, not a complete vulnerability scan.
   when the last widget is removed.
 - Strict response validation, bounded output, isolated Python execution,
   and cleanup of owned child processes.
-- Regression tests for the data model, process supervisor, and real QML
-  service/popup integration across multiple widgets.
+- A stack update is aimed at the host whose row you clicked, even when two
+  stacks run a service with the same name.
+- Regression tests for the data model, process supervisor, real QML
+  service/popup integration across multiple widgets, and the stack row
+  targeting and failure reasons (`tests/stack_test.py`).
 
 ## Install
 

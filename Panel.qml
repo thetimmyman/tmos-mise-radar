@@ -403,7 +403,7 @@ Panel {
           Rectangle {
             id: stackRow
             readonly property bool secure: modelData.security !== ""
-            readonly property bool armed: root.stack && root.stack.confirmService === modelData.name
+            readonly property bool armed: root.stack && root.stack.confirmService === root.stack.rowKey(modelData)
             width: parent.width
             height: stackCol.implicitHeight + Style.spacing.xxl
             radius: Style.cornerRadius
@@ -484,7 +484,7 @@ Panel {
                       fontFamily: root.bar ? root.bar.fontFamily : Style.font.family
                       size: Style.spacing.controlHeight
                       enabled: root.stack && !root.stack.updating
-                      onClicked: if (root.stack) root.stack.requestUpdate(modelData.name)
+                      onClicked: if (root.stack) root.stack.requestUpdate(modelData.name, modelData.targetId)
                     }
                   }
                 }
