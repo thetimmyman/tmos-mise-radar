@@ -391,7 +391,7 @@ Panel {
         }
 
         Text {
-          visible: root.stack && root.stack.lastChecked !== "" && root.stack.rows.length === 0
+          visible: root.stack && root.stack.lastChecked !== "" && root.stack.rows.length === 0 && root.stack.totalCount > 0 && root.stack.errorMessage === ""
           textFormat: Text.PlainText
           text: root.stack ? "All " + root.stack.totalCount + " services are on the latest image" : ""
           color: Commons.Color.popups.text

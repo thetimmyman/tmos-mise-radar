@@ -237,6 +237,10 @@ Item {
     root.rows = all
     root.totalCount = root.checkTotals
     root.errorMessage = root.checkErrors.join("; ")
+    if (root.checkErrors.length === 0 && !root.updating) {
+      root.updateMessage = ""
+      root.updateFailed = false
+    }
     root.lastChecked = new Date().toLocaleTimeString(Qt.locale(), "HH:mm")
   }
 
