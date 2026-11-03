@@ -112,12 +112,25 @@ test("parseMiseOutdated with outdated tools", () => {
       "requested": "20",
       "current": "20.0.0",
       "latest": "20.1.0"
+    },
+    "uninstalled-lazy-tool": {
+      "requested": "latest",
+      "current": null,
+      "bump": null,
+      "latest": "1.0.0"
+    },
+    "no-requested-tool": {
+      "requested": null,
+      "current": null,
+      "latest": "2.0.0"
     }
   };
   
   const result = Model.parseMiseOutdated(input);
   assert.strictEqual(result.python.latest, "3.11.1");
   assert.strictEqual(result.node.latest, "20.1.0");
+  assert.strictEqual(result["uninstalled-lazy-tool"].latest, "1.0.0");
+  assert.strictEqual(result["no-requested-tool"].latest, "2.0.0");
 });
 
 test("mergeToolData with no outdated tools", () => {

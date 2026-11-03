@@ -45,8 +45,8 @@ Panel {
     bar: root.bar
     open: root.opened
     focusTarget: keyCatcher
-    padding: Style.spacing.panelPadding
-    contentWidth: panel.fittedContentWidth(Style.space(640))
+    padding: Style.spacing.popupPadding
+    contentWidth: panel.fittedContentWidth(Style.space(580))
     contentHeight: panel.fittedContentHeight(content.implicitHeight)
 
     PanelKeyCatcher {
@@ -58,11 +58,11 @@ Panel {
       Column {
         id: content
         width: parent.width
-        spacing: Style.spacing.panelGap
+        spacing: Style.spacing.rowGap
 
         Column {
           width: parent.width
-          spacing: Style.spacing.labelGap
+          spacing: Style.spacing.xs
 
           Text {
             textFormat: Text.PlainText
@@ -161,12 +161,12 @@ Panel {
         Column {
           visible: root.service && root.service.toolRows.length > 0
           width: parent.width
-          spacing: Style.spacing.sm
+          spacing: Style.space(1)
 
           Row {
-            x: Style.spacing.lg
-            width: parent.width - Style.spacing.lg * 2
-            height: Style.spacing.controlHeight
+            x: Style.spacing.md
+            width: parent.width - Style.spacing.md * 2
+            height: Style.font.bodySmall + Style.space(6)
             spacing: 0
 
             Text {
@@ -213,17 +213,17 @@ Panel {
 
             Rectangle {
               width: parent.width
-              height: Math.max(Style.spacing.popupRowHeight, rowTexts.implicitHeight + Style.spacing.xl)
-              color: modelData.outdated ? Util.alpha(Commons.Color.accent, 0.10) : Util.alpha(Commons.Color.popups.text, Style.normalFillAlpha)
+              height: Math.max(Style.font.bodySmall + Style.space(8), rowTexts.implicitHeight + Style.space(4))
+              color: modelData.outdated ? Util.alpha(Commons.Color.accent, 0.12) : "transparent"
               radius: Style.cornerRadius
-              border.width: Style.spacing.hairline
-              border.color: Util.alpha(modelData.outdated ? Commons.Color.accent : Commons.Color.popups.text, 0.12)
+              border.width: modelData.outdated ? Style.spacing.hairline : 0
+              border.color: modelData.outdated ? Util.alpha(Commons.Color.accent, 0.25) : "transparent"
 
               Row {
                 id: rowTexts
                 anchors.verticalCenter: parent.verticalCenter
-                x: Style.spacing.lg
-                width: parent.width - Style.spacing.lg * 2
+                x: Style.spacing.md
+                width: parent.width - Style.spacing.md * 2
                 spacing: 0
 
                 Text {
@@ -234,7 +234,7 @@ Panel {
                   color: Commons.Color.popups.text
                   font.family: root.bar ? root.bar.fontFamily : Style.font.family
                   font.pixelSize: Style.font.bodySmall
-                  font.bold: true
+                  font.bold: modelData.outdated
                 }
                 Text {
                   width: parent.width * 0.18
@@ -242,6 +242,7 @@ Panel {
                   text: modelData.requested
                   elide: Text.ElideRight
                   color: Commons.Color.popups.text
+                  opacity: 0.85
                   font.family: root.bar ? root.bar.fontFamily : Style.font.family
                   font.pixelSize: Style.font.bodySmall
                 }
@@ -251,6 +252,7 @@ Panel {
                   text: modelData.current
                   elide: Text.ElideRight
                   color: Commons.Color.popups.text
+                  opacity: 0.85
                   font.family: root.bar ? root.bar.fontFamily : Style.font.family
                   font.pixelSize: Style.font.bodySmall
                 }
@@ -260,13 +262,14 @@ Panel {
                   text: modelData.latest !== "" ? modelData.latest : modelData.current
                   elide: Text.ElideRight
                   color: modelData.outdated ? Commons.Color.accent : Commons.Color.popups.text
+                  opacity: modelData.outdated ? 1.0 : 0.85
                   font.family: root.bar ? root.bar.fontFamily : Style.font.family
                   font.pixelSize: Style.font.bodySmall
                   font.bold: modelData.outdated
                 }
                 Item {
                   width: parent.width * 0.10
-                  height: Style.spacing.controlHeight
+                  height: parent.height
 
                   PanelActionButton {
                     anchors.right: parent.right
@@ -277,7 +280,7 @@ Panel {
                     foreground: Commons.Color.popups.text
                     hoverColor: Commons.Color.accent
                     fontFamily: root.bar ? root.bar.fontFamily : Style.font.family
-                    size: Style.spacing.controlHeight
+                    size: Style.spacing.controlHeight - Style.spacing.xs
                     enabled: !root.upgrading
                     onClicked: if (root.service) root.service.upgradeTool(modelData.name)
                   }
@@ -297,7 +300,7 @@ Panel {
 
         Column {
           width: parent.width
-          spacing: Style.spacing.labelGap
+          spacing: Style.spacing.xs
 
           Text {
             textFormat: Text.PlainText
@@ -405,27 +408,27 @@ Panel {
             readonly property bool secure: modelData.security !== ""
             readonly property bool armed: root.stack && root.stack.confirmService === root.stack.rowKey(modelData)
             width: parent.width
-            height: stackCol.implicitHeight + Style.spacing.xxl
+            height: stackCol.implicitHeight + Style.spacing.md * 2
             radius: Style.cornerRadius
             border.width: Style.spacing.hairline
-            border.color: Util.alpha(stackRow.secure || modelData.reviewRequired ? Commons.Color.urgent : Commons.Color.accent, 0.2)
-            color: stackRow.secure ? Util.alpha(Commons.Color.urgent, 0.16)
+            border.color: Util.alpha(stackRow.secure || modelData.reviewRequired ? Commons.Color.urgent : Commons.Color.accent, 0.20)
+            color: stackRow.secure ? Util.alpha(Commons.Color.urgent, 0.14)
               : modelData.reviewRequired ? Util.alpha(Commons.Color.urgent, 0.08)
-              : Util.alpha(Commons.Color.accent, 0.10)
+              : Util.alpha(Commons.Color.accent, 0.08)
 
             Column {
               id: stackCol
               anchors.verticalCenter: parent.verticalCenter
-              x: Style.spacing.lg
-              width: parent.width - Style.spacing.lg * 2
-              spacing: Style.spacing.sm
+              x: Style.spacing.md
+              width: parent.width - Style.spacing.md * 2
+              spacing: Style.spacing.xs
 
               Row {
                 width: parent.width
                 spacing: 0
 
                 Text {
-                  width: parent.width * 0.26
+                  width: parent.width * 0.34
                   textFormat: Text.PlainText
                   text: (stackRow.secure ? "🛡 " : modelData.reviewRequired ? "⚠ " : "") + modelData.name
                   elide: Text.ElideRight
@@ -435,7 +438,7 @@ Panel {
                   font.bold: true
                 }
                 Text {
-                  width: parent.width * 0.29
+                  width: parent.width * 0.22
                   textFormat: Text.PlainText
                   text: modelData.current
                   elide: Text.ElideRight
@@ -445,9 +448,9 @@ Panel {
                   font.pixelSize: Style.font.bodySmall
                 }
                 Text {
-                  width: parent.width * 0.29
+                  width: parent.width * 0.30
                   textFormat: Text.PlainText
-                  text: modelData.error !== "" ? modelData.error : "→ " + modelData.latest
+                  text: modelData.error !== "" ? (modelData.error === "registry lookup failed" ? "lookup failed" : modelData.error) : "→ " + modelData.latest
                   elide: Text.ElideRight
                   color: modelData.error !== "" ? Commons.Color.urgent : Commons.Color.accent
                   font.family: root.bar ? root.bar.fontFamily : Style.font.family
@@ -455,13 +458,13 @@ Panel {
                   font.bold: modelData.error === ""
                 }
                 Item {
-                  width: parent.width * 0.16
-                  height: Style.spacing.controlHeight
+                  width: parent.width * 0.14
+                  height: Style.spacing.controlHeight - Style.spacing.xs
 
                   Row {
                     anchors.right: parent.right
                     anchors.verticalCenter: parent.verticalCenter
-                    spacing: Style.spacing.sm
+                    spacing: Style.spacing.xs
 
                     PanelActionButton {
                       visible: modelData.notesUrl !== ""
@@ -470,7 +473,7 @@ Panel {
                       foreground: Commons.Color.popups.text
                       hoverColor: Commons.Color.accent
                       fontFamily: root.bar ? root.bar.fontFamily : Style.font.family
-                      size: Style.spacing.controlHeight
+                      size: Style.spacing.controlHeight - Style.spacing.xs
                       onClicked: Qt.openUrlExternally(modelData.notesUrl)
                     }
                     PanelActionButton {
@@ -482,7 +485,7 @@ Panel {
                       foreground: stackRow.armed ? Commons.Color.urgent : Commons.Color.popups.text
                       hoverColor: modelData.reviewRequired ? Commons.Color.urgent : Commons.Color.accent
                       fontFamily: root.bar ? root.bar.fontFamily : Style.font.family
-                      size: Style.spacing.controlHeight
+                      size: Style.spacing.controlHeight - Style.spacing.xs
                       enabled: root.stack && !root.stack.updating
                       onClicked: if (root.stack) root.stack.requestUpdate(modelData.name, modelData.targetId)
                     }

@@ -72,7 +72,7 @@ function parseMiseList(value) {
     for (var i = 0; i < versions.length; i++) {
       var entry = versions[i]
       if (!isObject(entry) || !validString(entry.version, false)
-          || (entry.requested_version !== undefined && !validString(entry.requested_version, true))
+          || (entry.requested_version !== undefined && entry.requested_version !== null && !validString(entry.requested_version, true))
           || (entry.active !== undefined && typeof entry.active !== "boolean")
           || (entry.installed !== undefined && typeof entry.installed !== "boolean")) return null
       if (!active && entry.active === true) active = entry
@@ -94,8 +94,8 @@ function parseMiseOutdated(value) {
     if (!Object.prototype.hasOwnProperty.call(value, name)) continue
     var entry = value[name]
     if (!isSafeName(name) || !isObject(entry) || !validString(entry.latest, false)
-        || (entry.current !== undefined && !validString(entry.current, true))
-        || (entry.requested !== undefined && !validString(entry.requested, true))) return null
+        || (entry.current !== undefined && entry.current !== null && !validString(entry.current, true))
+        || (entry.requested !== undefined && entry.requested !== null && !validString(entry.requested, true))) return null
     map[name] = {latest: entry.latest}
   }
   return map

@@ -280,8 +280,13 @@ Item {
 
   function requestRefresh() {
     if (!root.polling || root.loading || root.updating) return
+    var hasRowErrors = false
+    for (var i = 0; i < root.rows.length; i++) {
+      if (root.rows[i].error !== "") { hasRowErrors = true; break }
+    }
+    var min = (root.errorMessage !== "" || hasRowErrors) ? root.panelErrorRefreshMinMs : root.panelRefreshMinMs
     var since = Date.now() - root.lastRefreshAt
-    if (root.lastRefreshAt > 0 && since >= 0 && since < root.panelRefreshMinMs && root.errorMessage === "") return
+    if (root.lastRefreshAt > 0 && since >= 0 && since < min) return
     root.runRefresh()
   }
 
