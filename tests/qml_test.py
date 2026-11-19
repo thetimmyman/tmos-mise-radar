@@ -21,7 +21,7 @@ def main():
         target = Path(directory)
         plugin = target / 'plugin'
         plugin.mkdir()
-        for name in ('BarWidget.qml', 'Panel.qml', 'Service.qml', 'Model.js', 'qmldir'):
+        for name in ('BarWidget.qml', 'Panel.qml', 'Service.qml', 'Model.js', 'Cursor.js', 'qmldir'):
             shutil.copy2(ROOT / name, plugin / name)
         shutil.copy2(ROOT / 'tests/qml/fake_stack_service.qml', plugin / 'StackService.qml')
         shutil.copy2(ROOT / 'tests/qml/fake_supervise.py', plugin / 'supervise.py')
