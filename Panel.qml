@@ -3,6 +3,7 @@ import Quickshell
 import qs.Commons
 import qs.Commons as Commons
 import qs.Ui
+import "Cursor.js" as Cursor
 
 Panel {
   id: root
@@ -14,8 +15,97 @@ Panel {
   property var service: null
   property var stack: null
 
+  // Opens a release-notes link. A property so a test can stand in for the browser launch.
+  property var openUrl: function(url) { Qt.openUrlExternally(url) }
+
   readonly property bool upgrading: root.service ? root.service.upgrading === true : false
   readonly property int outdatedCount: root.service ? root.service.outdatedCount : 0
+
+  // Which action buttons are on screen and which can run. The buttons and the keyboard cursor read
+  // the same properties, so the cursor can never land on a button the pointer could not use.
+  readonly property bool allVisible: root.outdatedCount > 0 || root.upgrading
+  readonly property bool allEnabled: !root.upgrading && root.outdatedCount > 0
+  readonly property bool toolsEnabled: !root.upgrading
+  readonly property bool safeVisible: !!root.stack && (root.stack.safeCount > 0 || root.stack.updating)
+  readonly property bool safeEnabled: !!root.stack && !root.stack.updating && root.stack.safeCount > 0
+  readonly property bool stackUpdateEnabled: !!root.stack && !root.stack.updating
+
+  // The keyboard cursor (see Cursor.js). Off when the panel opens: Enter must never run an upgrade
+  // before an arrow key has shown the user what it would run.
+  readonly property var cursorTargets: Cursor.build({
+    all: {visible: root.allVisible, enabled: root.allEnabled},
+    tools: root.service ? root.service.toolRows : [],
+    toolsEnabled: root.toolsEnabled,
+    safe: {visible: root.safeVisible, enabled: root.safeEnabled},
+    stacks: root.stack ? root.stack.rows : [],
+    stackEnabled: root.stackUpdateEnabled
+  }, function(row) { return root.stackKey(row) })
+  property var cursorState: Cursor.initial()
+  readonly property string cursorTipKey: Cursor.tipKey(root.cursorState)
+
+  function stackKey(row) {
+    return root.stack ? root.stack.rowKey(row) : ""
+  }
+
+  function moveCursor(dx, dy) {
+    root.cursorState = Cursor.move(root.cursorTargets, root.cursorState, dx, dy)
+  }
+
+  function pointCursor(key) {
+    root.cursorState = Cursor.point(root.cursorTargets, root.cursorState, key)
+  }
+
+  function resetCursor() {
+    root.cursorState = Cursor.initial()
+  }
+
+  function findAction(item, key) {
+    if (!item) return null
+    if (item.cursorKey === key && item.visible) return item
+    var kids = item.children || []
+    for (var i = 0; i < kids.length; i++) {
+      var hit = root.findAction(kids[i], key)
+      if (hit) return hit
+    }
+    return null
+  }
+
+  // Enter or Space: click the highlighted button, which runs exactly what a pointer click runs and
+  // under the same `enabled` gate. Nothing happens while the cursor is off.
+  function activateCursor() {
+    var key = Cursor.activate(root.cursorTargets, root.cursorState)
+    if (key === "") return
+    var action = root.findAction(keyCatcher, key)
+    if (action && action.enabled) action.clicked()
+  }
+
+  // A refresh keeps the cursor on the same action, or moves it to a neighbour when that action is gone.
+  onCursorTargetsChanged: root.cursorState = Cursor.resolve(root.cursorTargets, root.cursorState)
+  onOpenedChanged: root.resetCursor()
+
+  // One action button, as a keyboard-cursor target. It paints the shell's own cursor state
+  // (`hasCursor`), the pointer entering it moves the cursor here, and while the keyboard has the
+  // cursor on it the button's tooltip is shown so an icon-only action says what it does.
+  component CursorActionButton: PanelActionButton {
+    id: action
+    property string cursorKey: ""
+    property bool pointerOver: false
+    // The button shows its own tooltip under the pointer, so this one stays quiet then.
+    readonly property bool cursorTipShown: action.cursorKey !== "" && root.cursorTipKey === action.cursorKey
+      && action.enabled && !action.pointerOver && action.tooltipText !== ""
+
+    hasCursor: root.cursorState.active && root.cursorState.key === action.cursorKey
+    onHovered: function(isHovered) {
+      action.pointerOver = isHovered
+      if (isHovered) root.pointCursor(action.cursorKey)
+    }
+
+    PanelToolTip {
+      visible: action.cursorTipShown
+      text: action.tooltipText
+      fontFamily: action.fontFamily
+    }
+  }
 
   function open() {
     root.controller.show()
@@ -52,6 +142,8 @@ Panel {
     PanelKeyCatcher {
       id: keyCatcher
       anchors.fill: parent
+      onMoveRequested: function(dx, dy) { root.moveCursor(dx, dy) }
+      onActivateRequested: root.activateCursor()
       onCloseRequested: root.close()
       onTabRequested: function(direction) { root.switchPanel(direction) }
 
@@ -87,11 +179,12 @@ Panel {
         }
 
         Row {
-          visible: root.outdatedCount > 0 || root.upgrading
+          visible: root.allVisible
           width: parent.width
           spacing: Style.spacing.controlGap
 
-          PanelActionButton {
+          CursorActionButton {
+            cursorKey: "all"
             anchors.verticalCenter: parent.verticalCenter
             iconText: "󰚰"
             tooltipText: "Run mise upgrade --bump for every outdated tool"
@@ -99,7 +192,7 @@ Panel {
             hoverColor: Commons.Color.accent
             fontFamily: root.bar ? root.bar.fontFamily : Style.font.family
             bordered: true
-            enabled: !root.upgrading && root.outdatedCount > 0
+            enabled: root.allEnabled
             onClicked: if (root.service) root.service.upgradeAll()
           }
 
@@ -271,7 +364,8 @@ Panel {
                   width: parent.width * 0.10
                   height: parent.height
 
-                  PanelActionButton {
+                  CursorActionButton {
+                    cursorKey: "tool:" + modelData.name
                     anchors.right: parent.right
                     anchors.verticalCenter: parent.verticalCenter
                     visible: modelData.outdated
@@ -281,7 +375,7 @@ Panel {
                     hoverColor: Commons.Color.accent
                     fontFamily: root.bar ? root.bar.fontFamily : Style.font.family
                     size: Style.spacing.controlHeight - Style.spacing.xs
-                    enabled: !root.upgrading
+                    enabled: root.toolsEnabled
                     onClicked: if (root.service) root.service.upgradeTool(modelData.name)
                   }
                 }
@@ -327,11 +421,12 @@ Panel {
         }
 
         Row {
-          visible: root.stack && (root.stack.safeCount > 0 || root.stack.updating)
+          visible: root.safeVisible
           width: parent.width
           spacing: Style.spacing.controlGap
 
-          PanelActionButton {
+          CursorActionButton {
+            cursorKey: "safe"
             anchors.verticalCenter: parent.verticalCenter
             iconText: "󰚰"
             tooltipText: "Pull and recreate updates with reviewed notes and no warnings"
@@ -339,7 +434,7 @@ Panel {
             hoverColor: Commons.Color.accent
             fontFamily: root.bar ? root.bar.fontFamily : Style.font.family
             bordered: true
-            enabled: root.stack && !root.stack.updating && root.stack.safeCount > 0
+            enabled: root.safeEnabled
             onClicked: if (root.stack) root.stack.updateSafe()
           }
 
@@ -466,17 +561,19 @@ Panel {
                     anchors.verticalCenter: parent.verticalCenter
                     spacing: Style.spacing.xs
 
-                    PanelActionButton {
-                      visible: modelData.notesUrl !== ""
+                    CursorActionButton {
+                      cursorKey: "notes:" + root.stackKey(modelData)
+                      visible: Cursor.hasNotes(modelData)
                       iconText: "󰈙"
                       tooltipText: "Open release notes"
                       foreground: Commons.Color.popups.text
                       hoverColor: Commons.Color.accent
                       fontFamily: root.bar ? root.bar.fontFamily : Style.font.family
                       size: Style.spacing.controlHeight - Style.spacing.xs
-                      onClicked: Qt.openUrlExternally(modelData.notesUrl)
+                      onClicked: root.openUrl(modelData.notesUrl)
                     }
-                    PanelActionButton {
+                    CursorActionButton {
+                      cursorKey: "stack:" + root.stackKey(modelData)
                       visible: modelData.outdated
                       iconText: stackRow.armed ? "󰄬" : "󰚰"
                       tooltipText: stackRow.armed ? "Confirm: update " + modelData.name + " after review"
@@ -486,7 +583,7 @@ Panel {
                       hoverColor: modelData.reviewRequired ? Commons.Color.urgent : Commons.Color.accent
                       fontFamily: root.bar ? root.bar.fontFamily : Style.font.family
                       size: Style.spacing.controlHeight - Style.spacing.xs
-                      enabled: root.stack && !root.stack.updating
+                      enabled: root.stackUpdateEnabled
                       onClicked: if (root.stack) root.stack.requestUpdate(modelData.name, modelData.targetId)
                     }
                   }
