@@ -99,7 +99,7 @@ creates no separate persistent cache, credentials, service units, or grants.
 - Quiet radar icon when everything is current
 - Red radar when something is behind
 - Panel table: tool, requested constraint, installed, latest
-- Keyboard: arrows or h/j/k/l move between actions, Enter or Space runs the highlighted one (nothing is highlighted until the first arrow press), Esc closes, Tab moves to the next bar panel
+- Keyboard: arrows or h/j/k/l move between actions, Enter or Space runs the highlighted one, once per key press (nothing is highlighted until the first arrow press or the pointer moving over a button), Esc closes, Tab moves to the next bar panel
 
 Latest comes from `mise outdated`, including brand-new releases mise would otherwise hide. That matches [mise-versions.jdx.dev](https://mise-versions.jdx.dev) more closely than mise's default delay.
 
@@ -172,6 +172,8 @@ omarchy plugin validate .
 # They use controlled responses, without invoking mise or modifying the desktop.
 /usr/bin/python3 -I -S -B tests/qml_test.py
 /usr/bin/python3 -I -S -B tests/keyboard_test.py
+# Real key and pointer events in an offscreen window: needs Omarchy/Quickshell, no Wayland session.
+/usr/bin/python3 -I -S -B tests/offscreen_test.py
 ```
 
 ## License

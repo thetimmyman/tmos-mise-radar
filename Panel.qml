@@ -43,20 +43,65 @@ Panel {
   property var cursorState: Cursor.initial()
   readonly property string cursorTipKey: Cursor.tipKey(root.cursorState)
 
+  // One activation per physical key press. Holding Enter makes the system repeat it, and a repeat
+  // must not run the second step of a review-required update (arm, then confirm) on its own: the
+  // latch is set by an activation and cleared only by the release of Return, Enter or Space. The
+  // release that goes with an auto-repeat is not a release of the key.
+  property bool activationLatched: false
+
+  // The pointer shares the cursor only once it has really moved since the panel opened or the
+  // keyboard last moved the cursor. Buttons that open, close or slide under a pointer that is
+  // standing still raise hover events too, and those must not move the cursor or switch it on.
+  property bool pointerArmed: false
+  // How many action buttons the pointer is over, so the keyboard tooltip can give way to theirs.
+  property int pointerButtons: 0
+
   function stackKey(row) {
     return root.stack ? root.stack.rowKey(row) : ""
   }
 
   function moveCursor(dx, dy) {
+    root.disarmPointer()
     root.cursorState = Cursor.move(root.cursorTargets, root.cursorState, dx, dy)
   }
 
+  // The pointer is over a button: it takes the cursor if the pointer has really moved.
   function pointCursor(key) {
+    if (!root.pointerArmed) return
     root.cursorState = Cursor.point(root.cursorTargets, root.cursorState, key)
+  }
+
+  // The pointer left a button: a cursor the pointer put there goes with it.
+  function leaveCursor(key) {
+    root.cursorState = Cursor.leave(root.cursorState, key)
   }
 
   function resetCursor() {
     root.cursorState = Cursor.initial()
+  }
+
+  // One pointer position sample, in the key catcher's coordinates. The shell's PointerMoveGate
+  // tells real movement from the synthetic samples a stationary pointer gets.
+  function pointerMoved(x, y) {
+    if (pointerGate.moved(keyCatcher, {x: x, y: y})) root.pointerArmed = true
+  }
+
+  function disarmPointer() {
+    pointerGate.reset()
+    root.pointerArmed = false
+  }
+
+  // A key was let go. Only the release of an activation key that is not an auto-repeat counts.
+  function keyReleased(key, isAutoRepeat) {
+    if (isAutoRepeat) return
+    if (key === Qt.Key_Return || key === Qt.Key_Enter || key === Qt.Key_Space) root.activationLatched = false
+  }
+
+  // Everything a session (one opening of the panel) must not inherit from the one before.
+  function resetSession() {
+    root.resetCursor()
+    root.activationLatched = false
+    root.disarmPointer()
   }
 
   function findAction(item, key) {
@@ -73,31 +118,58 @@ Panel {
   // Enter or Space: click the highlighted button, which runs exactly what a pointer click runs and
   // under the same `enabled` gate. Nothing happens while the cursor is off.
   function activateCursor() {
+    if (root.activationLatched) return
+    root.activationLatched = true
     var key = Cursor.activate(root.cursorTargets, root.cursorState)
     if (key === "") return
     var action = root.findAction(keyCatcher, key)
     if (action && action.enabled) action.clicked()
   }
 
-  // A refresh keeps the cursor on the same action, or moves it to a neighbour when that action is gone.
-  onCursorTargetsChanged: root.cursorState = Cursor.resolve(root.cursorTargets, root.cursorState)
-  onOpenedChanged: root.resetCursor()
+  // A refresh keeps the cursor on the same action, or moves it to a neighbour when that action is
+  // gone. Buttons may move under a pointer that is standing still, so the pointer must move again.
+  onCursorTargetsChanged: {
+    root.disarmPointer()
+    root.cursorState = Cursor.resolve(root.cursorTargets, root.cursorState)
+  }
+  onOpenedChanged: root.resetSession()
+
+  PointerMoveGate {
+    id: pointerGate
+    referenceItem: keyCatcher
+  }
 
   // One action button, as a keyboard-cursor target. It paints the shell's own cursor state
-  // (`hasCursor`), the pointer entering it moves the cursor here, and while the keyboard has the
-  // cursor on it the button's tooltip is shown so an icon-only action says what it does.
+  // (`hasCursor`), the pointer entering it moves the cursor here (once the pointer has really
+  // moved), and while the keyboard has the cursor on it the button's tooltip is shown so an
+  // icon-only action says what it does.
   component CursorActionButton: PanelActionButton {
     id: action
     property string cursorKey: ""
     property bool pointerOver: false
-    // The button shows its own tooltip under the pointer, so this one stays quiet then.
+    // Whether the pointer is on a button that can be used. A button that goes away or is disabled
+    // under the pointer is not one, whether or not its hover state was ever cleared.
+    readonly property bool pointerHeld: action.pointerOver && action.enabled && action.visible
+    // Every button shows its own tooltip under the pointer, so the keyboard one stays quiet while
+    // the pointer is over any of them.
     readonly property bool cursorTipShown: action.cursorKey !== "" && root.cursorTipKey === action.cursorKey
-      && action.enabled && !action.pointerOver && action.tooltipText !== ""
+      && action.enabled && root.pointerButtons === 0 && action.tooltipText !== ""
 
     hasCursor: root.cursorState.active && root.cursorState.key === action.cursorKey
     onHovered: function(isHovered) {
       action.pointerOver = isHovered
       if (isHovered) root.pointCursor(action.cursorKey)
+      else root.leaveCursor(action.cursorKey)
+    }
+    onPointerHeldChanged: root.pointerButtons += action.pointerHeld ? 1 : -1
+    Component.onDestruction: if (action.pointerHeld) root.pointerButtons--
+
+    // The pointer moved while it was already over this button: it takes the cursor now.
+    Connections {
+      target: root
+      function onPointerArmedChanged() {
+        if (root.pointerArmed && action.pointerHeld) root.pointCursor(action.cursorKey)
+      }
     }
 
     PanelToolTip {
@@ -146,6 +218,14 @@ Panel {
       onActivateRequested: root.activateCursor()
       onCloseRequested: root.close()
       onTabRequested: function(direction) { root.switchPanel(direction) }
+      Keys.onReleased: function(event) { root.keyReleased(event.key, event.isAutoRepeat) }
+
+      // Where the pointer is, for the gate. Passive: it takes no button and sets no cursor shape,
+      // so clicks, the buttons' own hover and their pointing-hand cursor are left as they are.
+      HoverHandler {
+        id: pointerSource
+        onPointChanged: root.pointerMoved(pointerSource.point.position.x, pointerSource.point.position.y)
+      }
 
       Column {
         id: content

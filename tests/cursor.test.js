@@ -345,3 +345,37 @@ test("states are plain data and moves do not mutate their input", () => {
   Cursor.move(targets, on(targets, "all"), 0, 1);
   assert.strictEqual(JSON.stringify(targets), snapshot);
 });
+
+test("a cursor the pointer placed goes when the pointer leaves that button", () => {
+  const targets = build();
+  let state = Cursor.point(targets, Cursor.initial(), "tool:python");
+  state = Cursor.leave(state, "tool:python");
+  assert.strictEqual(state.active, false);
+  assert.strictEqual(Cursor.activate(targets, state), "", "Enter then runs nothing");
+  assert.strictEqual(Cursor.tipKey(state), "");
+  // And the next arrow is a first press again: it switches on without moving.
+  assert.strictEqual(Cursor.move(targets, state, 0, 1).key, "all");
+});
+
+test("a cursor the keyboard placed is not the pointer's to take away", () => {
+  const targets = build();
+  const keyboard = Cursor.move(targets, on(targets, "tool:python"), 0, 1);
+  assert.strictEqual(keyboard.source, "keyboard");
+  assert.strictEqual(Cursor.leave(keyboard, keyboard.key), keyboard, "leaving the button it sits on changes nothing");
+  assert.strictEqual(Cursor.leave(keyboard, "tool:python"), keyboard);
+});
+
+test("leaving some other button leaves the cursor where it is", () => {
+  const targets = build();
+  const state = Cursor.point(targets, Cursor.initial(), "tool:python");
+  assert.strictEqual(Cursor.leave(state, "tool:node"), state);
+  assert.strictEqual(Cursor.leave(Cursor.initial(), "tool:node").active, false);
+});
+
+test("an arrow after the pointer took the cursor makes it the keyboard's, so leaving no longer clears it", () => {
+  const targets = build();
+  let state = Cursor.point(targets, Cursor.initial(), "tool:python");
+  state = Cursor.move(targets, state, 0, 0);
+  assert.strictEqual(state.key, "tool:python");
+  assert.strictEqual(Cursor.leave(state, "tool:python"), state);
+});

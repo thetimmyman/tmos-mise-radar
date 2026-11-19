@@ -85,9 +85,15 @@ Scope {
   function tipped() { return keysOf(shown().filter(function(b) { return b.cursorTipShown })) }
 
   function move(dx, dy) { catcher.moveRequested(dx, dy) }
-  // Enter emits returnRequested and then activateRequested, Space only the latter.
-  function enter() { catcher.returnRequested(); catcher.activateRequested() }
-  function space() { catcher.activateRequested() }
+  // Enter emits returnRequested and then activateRequested, Space only the latter. enter() and
+  // space() are one deliberate press and release; enterHeld() is a press whose release has not
+  // arrived (a held key, or a second press before the first was let go).
+  function enterHeld() { catcher.returnRequested(); catcher.activateRequested() }
+  function release(key, autoRepeat) { panel.keyReleased(key, autoRepeat) }
+  function enter() { enterHeld(); release(Qt.Key_Return, false) }
+  function space() { catcher.activateRequested(); release(Qt.Key_Space, false) }
+  // The pointer really moving: the shell's gate needs one sample to prime and a second to count.
+  function pointerMoves() { panel.pointerMoved(5, 5); panel.pointerMoved(30, 30) }
   function cursorKey() { return panel.cursorState.active ? panel.cursorState.key : "" }
   function sameList(a, b) { return JSON.stringify(a) === JSON.stringify(b) }
 
@@ -204,6 +210,42 @@ Scope {
       stack.updateMessage = ""
     },
     function() {
+      // One activation per physical key press: a held or doubled Enter must not skip the review step.
+      enterHeld()
+      check(stack.confirmService === "media|plex", "the first press arms the row: " + stack.confirmService)
+      enterHeld()
+      check(stack.confirmService === "media|plex" && stack.updateMessage.indexOf("click again") > 0,
+        "a second press with no release in between runs nothing: " + stack.updateMessage)
+      release(Qt.Key_Return, true)
+      enterHeld()
+      check(stack.confirmService === "media|plex", "an auto-repeat release does not reopen the latch: " + stack.updateMessage)
+      release(Qt.Key_Down, false)
+      enterHeld()
+      check(stack.confirmService === "media|plex", "nor does the release of another key: " + stack.updateMessage)
+      release(Qt.Key_Return, false)
+      enterHeld()
+      check(stack.confirmService === "" && stack.updateMessage === "Update failed for plex",
+        "after a real release the second deliberate press runs it: " + stack.updateMessage + " / " + stack.confirmService)
+      release(Qt.Key_Return, false)
+      stack.updateMessage = ""
+      // Release notes: a held key opens the page once, and any of Return, Enter and Space reopens the latch.
+      move(-1, 0)
+      check(cursorKey() === "notes:media|plex", "left to release notes")
+      test.opened = []
+      enterHeld(); enterHeld(); enterHeld()
+      check(test.opened.length === 1, "a held Enter opens the notes once: " + test.opened)
+      release(Qt.Key_Space, false)
+      enterHeld()
+      check(test.opened.length === 2, "a released Space reopens the latch: " + test.opened)
+      release(Qt.Key_Enter, false)
+      catcher.activateRequested()
+      check(test.opened.length === 3, "so does the keypad Enter: " + test.opened)
+      release(Qt.Key_Return, false)
+      test.opened = []
+      move(1, 0)
+      check(cursorKey() === "stack:media|plex", "back on the update button")
+    },
+    function() {
       // A running update disables the stack buttons but not the release notes.
       stack.updating = true
       enter()
@@ -228,27 +270,100 @@ Scope {
       check(b.tooltipText.indexOf("Review needed") === 0 || b.tooltipText.indexOf("Confirm") === 0, "tooltip text unchanged: " + b.tooltipText)
     },
     function() {
-      // The pointer shares the cursor: hovering a button moves it and the button's own tooltip takes over.
+      // The pointer shares the cursor, but only once it has really moved since the keyboard last did.
       var b = button("tool:python")
+      check(cursorKey() === "stack:media|plex", "keyboard cursor before the pointer steps in, got " + cursorKey())
       b.hovered(true)
-      check(cursorKey() === "tool:python", "hover moves the cursor to the button, got " + cursorKey())
+      check(cursorKey() === "stack:media|plex", "a hover with no pointer movement leaves the cursor alone, got " + cursorKey())
+      panel.pointerMoved(5, 5)
+      check(cursorKey() === "stack:media|plex", "the first pointer sample only primes the gate")
+      panel.pointerMoved(30, 30)
+      check(cursorKey() === "tool:python", "after real movement the hovered button takes the cursor, got " + cursorKey())
       check(sameList(lit(), ["tool:python"]), "one highlight on screen: " + lit())
       check(tipped().length === 0, "no second tooltip under the pointer: " + tipped())
       b.hovered(false)
-      check(cursorKey() === "tool:python", "leaving does not move the cursor")
-      check(tipped().length === 0, "and does not raise the keyboard tooltip: " + tipped())
-      move(0, -1)
-      check(cursorKey() === "tool:node" && sameList(tipped(), ["tool:node"]), "the next arrow does: " + tipped())
-      // Pointer still over a button the keyboard cursor then returns to: still a single tooltip.
-      var p = button("tool:python")
-      p.hovered(true)
-      check(cursorKey() === "tool:python", "hovering python takes the cursor there")
-      move(0, -1)
-      check(cursorKey() === "tool:node" && sameList(tipped(), ["tool:node"]), "an arrow moves it away: " + tipped())
+      check(panel.cursorState.active === false, "the pointer leaving switches off a cursor the pointer placed")
+      check(lit().length === 0 && tipped().length === 0, "nothing stays highlighted: " + lit())
+      enter()
+      check(mise.calls.length === 4, "and Enter then runs nothing: " + mise.calls)
+    },
+    function() {
+      // A cursor the keyboard placed is not the pointer's to take away.
       move(0, 1)
-      check(cursorKey() === "tool:python", "and back")
-      check(tipped().length === 0, "the hovered button keeps only its own tooltip: " + tipped())
-      p.hovered(false)
+      check(cursorKey() === "all", "the next arrow is a first press again, got " + cursorKey())
+      var b = button("tool:python")
+      b.hovered(true)
+      check(cursorKey() === "all", "no pointer movement since the arrow: hover does not take the cursor")
+      b.hovered(false)
+      check(cursorKey() === "all", "and leaving does not clear a keyboard cursor")
+      var all = button("all")
+      all.hovered(true)
+      all.hovered(false)
+      check(cursorKey() === "all", "leaving the button the keyboard cursor sits on does not clear it either")
+      move(0, 1); move(0, 1)
+      check(cursorKey() === "tool:python", "keyboard cursor on python, got " + cursorKey())
+    },
+    function() {
+      // One tooltip at a time: while the pointer is over any action button its own tooltip is the
+      // only one, wherever the keyboard cursor is.
+      var node = button("tool:node")
+      var python = button("tool:python")
+      check(sameList(tipped(), ["tool:python"]), "keyboard tooltip with the pointer elsewhere: " + tipped())
+      node.hovered(true)
+      check(cursorKey() === "tool:python", "pointer over another button, no movement: cursor stays")
+      check(tipped().length === 0, "the keyboard tooltip yields to the pointer being over any button: " + tipped())
+      move(0, -1)
+      check(cursorKey() === "tool:node", "keyboard to node while the pointer rests on node")
+      check(tipped().length === 0, "still one tooltip (the button's own): " + tipped())
+      python.hovered(true)
+      node.hovered(false)
+      check(tipped().length === 0, "pointer now over python: " + tipped())
+      move(0, 1)
+      check(cursorKey() === "tool:python" && tipped().length === 0, "keyboard onto the hovered button: " + tipped())
+      python.hovered(false)
+      check(sameList(tipped(), ["tool:python"]), "pointer gone, the keyboard tooltip returns: " + tipped())
+      // A button destroyed under the pointer must not leave the keyboard tooltip suppressed.
+      node.hovered(true)
+      check(tipped().length === 0, "pointer over node")
+      node.hovered(false)
+      check(sameList(tipped(), ["tool:python"]), "and gone again: " + tipped())
+    },
+    function() {
+      // A button that is disabled or gone under the pointer is not one the pointer is on, whether or
+      // not its hover ever cleared, so it cannot leave the keyboard tooltip suppressed for good.
+      move(0, 1)
+      check(cursorKey() === "safe", "keyboard cursor on safe services, got " + cursorKey())
+      check(sameList(tipped(), ["safe"]), "its tooltip is up: " + tipped())
+      button("tool:node").hovered(true)
+      check(tipped().length === 0, "pointer over node: the keyboard tooltip yields")
+      mise.upgrading = true
+      check(sameList(tipped(), ["safe"]), "node was disabled under the pointer: the keyboard tooltip returns: " + tipped())
+      mise.upgrading = false
+      check(tipped().length === 0, "node is enabled again and the pointer is still over it: " + tipped())
+      var rows = mise.toolRows
+      mise.toolRows = [rows[1], rows[2]]
+      mise.outdatedCount = 1
+      check(sameList(tipped(), ["safe"]), "node was removed under the pointer: the keyboard tooltip returns: " + tipped())
+      mise.toolRows = rows
+      mise.outdatedCount = 2
+      check(sameList(tipped(), ["safe"]), "and a rebuilt node button is not under the pointer: " + tipped())
+    },
+    function() {
+      // Rows that change under a pointer that is standing still must not move or switch on the
+      // cursor: the pointer has to move again first.
+      pointerMoves()
+      check(panel.pointerArmed === true, "the pointer has moved")
+      var rows = mise.toolRows
+      mise.toolRows = [rows[1], rows[2]]
+      mise.outdatedCount = 1
+      check(panel.pointerArmed === false, "a refresh that changes the buttons disarms the pointer")
+      button("tool:python").hovered(true)
+      check(cursorKey() === "safe", "a button that slid under the pointer does not take the cursor, got " + cursorKey())
+      button("tool:python").hovered(false)
+      mise.toolRows = rows
+      mise.outdatedCount = 2
+      move(0, -1)
+      check(cursorKey() === "tool:python", "back on python for the next step, got " + cursorKey())
     },
     function() {
       // A refresh keeps the cursor on the same action and falls back when it is gone.
@@ -303,6 +418,36 @@ Scope {
       mise.calls = []
       enter()
       check(mise.calls.length === 0, "Enter after reopening runs nothing")
+    },
+    function() {
+      // Opening or closing also drops a held key's latch and the pointer's movement.
+      mise.toolRows = [
+        {name: "node", requested: "22", current: "22.1", latest: "22.2", outdated: true},
+        {name: "python", requested: "3", current: "3.12", latest: "3.13", outdated: true}
+      ]
+      mise.outdatedCount = 2
+      mise.calls = []
+      panel.resetCursor()
+      move(0, 1)
+      check(cursorKey() === "all", "cursor on update all")
+      enterHeld()
+      check(sameList(mise.calls, ["all"]), "Enter runs it once: " + mise.calls)
+      enterHeld()
+      check(sameList(mise.calls, ["all"]), "and not again while held: " + mise.calls)
+      panel.openedChanged()
+      move(0, 1)
+      enterHeld()
+      check(sameList(mise.calls, ["all", "all"]), "a panel that has reopened takes a fresh Enter: " + mise.calls)
+      release(Qt.Key_Return, false)
+      pointerMoves()
+      panel.openedChanged()
+      button("tool:python").hovered(true)
+      check(panel.cursorState.active === false, "a pointer resting where a button appears does not switch the cursor on")
+      check(lit().length === 0, "so nothing is highlighted on opening")
+      panel.pointerMoved(31, 31)
+      panel.pointerMoved(60, 60)
+      check(cursorKey() === "tool:python", "until the pointer moves: " + cursorKey())
+      button("tool:python").hovered(false)
     }
   ]
   property var mirror: []

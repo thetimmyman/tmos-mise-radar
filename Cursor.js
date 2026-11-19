@@ -153,6 +153,13 @@ function point(targets, state, key) {
   return at < 0 ? state : place(targets, at, "pointer")
 }
 
+// The pointer left a button. A cursor the pointer put on that button goes off with it, so it does
+// not stay lit where the pointer no longer is; a cursor the keyboard placed is left alone, and so
+// is a cursor on any other button.
+function leave(state, key) {
+  return state.active && state.source === "pointer" && state.key === key ? initial() : state
+}
+
 // The key to run on Enter or Space: "" unless the cursor is on, on a target that exists, and that
 // target is enabled.
 function activate(targets, state) {
@@ -170,5 +177,5 @@ function tipKey(state) {
 
 if (typeof module !== "undefined" && module.exports) {
   module.exports = {initial: initial, build: build, hasNotes: hasNotes, resolve: resolve, move: move,
-    point: point, activate: activate, tipKey: tipKey}
+    point: point, leave: leave, activate: activate, tipKey: tipKey}
 }
